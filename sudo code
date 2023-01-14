@@ -1,0 +1,61 @@
+\\ AHI
+# Initialize variables to store the number of apneas and hypopneas
+apnea_count = 0
+hypopnea_count = 0
+
+# Get the total hours of sleep
+total_hours = get_total_hours_of_sleep()
+
+# Begin monitoring the sound input
+while monitoring:
+    # Get the current sound level
+    sound_level = get_sound_level()
+
+    # If the sound level drops below a certain threshold, increment the apnea count
+    if sound_level < apnea_threshold:
+        apnea_count += 1
+
+    # If the sound level drops to a level between the apnea threshold and a hypopnea threshold, increment the hypopnea count
+    elif sound_level < hypopnea_threshold:
+        hypopnea_count += 1
+
+# Stop monitoring the sound input
+stop_monitoring()
+
+# Calculate the AHI
+ahi = (apnea_count + hypopnea_count) / total_hours
+
+;;;;;;;;;;;;;;;;;
+\\ RDI
+# Initialize variables to store the number of apneas, hypopneas, and RERAs
+apnea_count = 0
+hypopnea_count = 0
+rera_count = 0
+
+# Get the total hours of sleep
+total_hours = get_total_hours_of_sleep()
+
+# Begin monitoring the sound input
+while monitoring:
+    # Get the current sound level
+    sound_level = get_sound_level()
+
+    # If the sound level drops below a certain threshold, increment the apnea count
+    if sound_level < apnea_threshold:
+        apnea_count += 1
+
+    # If the sound level drops to a level between the apnea threshold and a hypopnea threshold, increment the hypopnea count
+    elif sound_level < hypopnea_threshold:
+        hypopnea_count += 1
+
+    # If there is an increase in respiratory effort, but no drop in sound level, increment the RERA count
+    elif sound_level > rera_threshold:
+        rera_count += 1
+
+# Stop monitoring the sound input
+stop_monitoring()
+
+# Calculate the RDI
+rdi = (apnea_count + hypopnea_count + rera_count) / total_hours
+\\\\\\\\\\\\
+
