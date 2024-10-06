@@ -1,8 +1,4 @@
-
-
-
-
-```cpp
+ 
 #include <Arduino.h>
 #include <arduinoFFT.h>
 
@@ -111,5 +107,5 @@ void resetCounts() {
   Serial.println("Event counts reset");
 }
 
-```
+ 
 
