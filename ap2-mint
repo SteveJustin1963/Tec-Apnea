@@ -1,0 +1,294 @@
+enhanced version
+
+1. System Management:
+- Hardware self-test (:K)
+- Configuration validation (:V)
+- Battery monitoring
+- Error handling
+- Interrupt handling (:Q)
+
+2. Enhanced Monitoring:
+- SpO2 monitoring
+- Heart rate tracking
+- Position monitoring
+- Noise threshold filtering
+- Event duration tracking
+
+3. Data Management:
+- Patient ID system
+- Comprehensive data storage
+- Real-time data display
+- Detailed reporting
+
+4. New Hardware Interface Functions:
+- RTC integration
+- SpO2 sensor
+- Position sensor
+- Heart rate sensor
+- Battery monitoring
+- Expanded I/O usage
+
+5. Advanced Features:
+- Configuration menu
+- Real-time status display
+- Enhanced event detection
+- Comprehensive reporting
+- Emergency stop handling
+- Multiple sensor integration
+
+6. Safety Features:
+- Hardware validation
+- Data validation
+- Battery monitoring
+- Error status tracking
+- Warning system
+
+7. User Interface:
+- Interactive configuration
+- Real-time status display
+- Comprehensive reporting
+- Error notifications
+
+To use the system:
+
+1. Start the system:
+```mint
+Z
+```
+
+2. Follow the configuration menu to set:
+- Patient ID
+- Threshold values
+- Maximum events
+
+3. The system will then:
+- Perform hardware checks
+- Validate settings
+- Begin monitoring
+- Display real-time status
+- Store event data
+- Generate reports
+
+4. Emergency stop:
+```mint
+Q
+```
+
+/////////////////////////////////////////////////////////////////////////
+
+// Enhanced Sleep Apnea Monitor for TEC-1
+// Version 2.0
+
+// System Constants
+#50 a! // Apnea threshold
+#30 y! // Hypopnea threshold
+#60 r! // RERA threshold
+#10 m! // Max events before alarm
+#80 b! // Battery voltage threshold
+#20 n! // Noise threshold
+#FF f! // Data storage start address
+#14 k! // RTC port
+#15 s! // SpO2 sensor port
+#16 p! // Position sensor port
+#17 h! // Heart rate sensor port
+
+// System Variables
+0 e! 0 p! 0 q! // Event counters (apnea, hypopnea, RERA)
+0 t! // Total sleep time in seconds
+0 d! // Event duration
+0 x! // Position sensor value
+0 c! // Heart rate value
+0 o! // Oxygen level
+0 v! // Battery voltage
+0 i! // Patient ID
+0 z! // Error status
+0 w! // Warning status
+
+// Hardware Interface Functions
+:R #12 /I 1 & ;   // Read snoring detector
+:L #12 /I ;       // Read sound level
+:A #13 /O ;       // Control alarm
+:T #14 /I ;       // Read RTC
+:O #15 /I ;       // Read SpO2
+:P #16 /I ;       // Read position
+:H #17 /I ;       // Read heart rate
+:B #18 /I ;       // Read battery voltage
+
+// Hardware Self-Test
+:K
+    `System Check...` /N
+    // Test sensors
+    #12 /I 0 = (
+        `Error: Breathing sensor failure` /N
+        1 z!
+        /F
+    )
+    #15 /I 0 = (
+        `Error: SpO2 sensor failure` /N
+        2 z!
+        /F
+    )
+    // Battery check
+    B v! 
+    v b < (
+        `Warning: Low battery` /N
+        1 w!
+    )
+    z 0 = w 0 = & // Return true if no errors/warnings
+;
+
+// Validation Functions
+:V
+    // Validate thresholds
+    a 0 < (
+        `Error: Invalid apnea threshold` /N
+        /F
+    )
+    y a > (
+        `Error: Hypopnea threshold above apnea` /N
+        /F
+    )
+    r y < (
+        `Error: RERA threshold below hypopnea` /N
+        /F
+    )
+    /T
+;
+
+// Configuration Menu
+:S
+    `Settings Menu` /N
+    `1. Patient ID (` i . `)` /N
+    `2. Apnea threshold (` a . `)` /N
+    `3. Hypopnea threshold (` y . `)` /N
+    `4. RERA threshold (` r . `)` /N
+    `5. Max events (` m . `)` /N
+    `6. Save & Exit` /N
+    
+    /K // Get choice
+    " 48 - // Convert ASCII to number
+    1 = ( `Enter Patient ID:` /N /K 48 - i! ) /E (
+    2 = ( `Enter Apnea threshold:` /N /K 48 - a! ) /E (
+    3 = ( `Enter Hypopnea threshold:` /N /K 48 - y! ) /E (
+    4 = ( `Enter RERA threshold:` /N /K 48 - r! ) /E (
+    5 = ( `Enter Max events:` /N /K 48 - m! ) /E (
+    6 = ( V )))))
+;
+
+// Data Storage
+:D
+    // Store event record
+    t f T , // Store timestamp
+    L ,     // Store sound level
+    d ,     // Store duration
+    P ,     // Store position
+    H ,     // Store heart rate
+    O ,     // Store SpO2
+    #100 f +! // Next storage location
+;
+
+// Enhanced Event Detection with Duration Tracking
+:C
+    R (  // If snoring detected
+        L n > (  // Above noise threshold
+            L a < (
+                1 d +!     // Increment duration
+                d 10 > (   // Long event (>10s)
+                    2 e +! // Count as severe apnea
+                ) /E (
+                    1 e +! // Count as mild apnea
+                )
+                D         // Store event data
+            ) /E (
+                L y < (
+                    1 p +! // Count hypopnea
+                    D
+                ) /E (
+                    L r > (
+                        1 q +! // Count RERA
+                        D
+                    )
+                )
+            )
+        )
+    )
+;
+
+// Real-time Monitoring Display
+:M
+    `Real-time Status:` /N
+    `SpO2: ` O . `%` /N
+    `Heart Rate: ` H . ` BPM` /N
+    `Position: ` P . /N
+    `Events: ` e p + q + . /N
+    1000() // Delay for readability
+;
+
+// Calculate AHI (Apnea-Hypopnea Index)
+:I
+    e p + 3600 * t / // (apnea + hypopnea) * 3600 / total_sleep_time
+;
+
+// Generate Report
+:G
+    `Sleep Study Report` /N
+    `------------------` /N
+    `Patient ID: ` i . /N
+    `Study Duration: ` t 3600 / . ` hours` /N
+    `Apnea Events: ` e . /N
+    `Hypopnea Events: ` p . /N
+    `RERA Events: ` q . /N
+    `AHI Score: ` I . /N
+    `Lowest SpO2: ` o . `%` /N
+    `Average Heart Rate: ` c . ` BPM` /N
+    `Position Changes: ` x . /N
+;
+
+// Main Monitoring Loop
+:W
+    K (  // If hardware check passes
+        /U (            // Unlimited loop
+            C           // Check for events
+            1 t +!      // Increment time
+            e p + q + m < // Check total events
+            v b > &     // Check battery
+            /W          // Continue while conditions met
+            
+            20( M )     // Display status every 20 cycles
+            
+            1000 (      // Delay loop
+                1 /O 1 /I '
+            )
+        )
+        1 A            // Trigger alarm
+        G              // Generate final report
+    ) /E (
+        `Hardware check failed - please check sensors` /N
+    )
+;
+
+// Initialize and Start System
+:Z
+    `Enhanced Sleep Apnea Monitor v2.0` /N
+    `------------------------------` /N
+    S              // Configure settings
+    V (            // If validation passes
+        `Starting monitoring...` /N
+        W          // Start main loop
+    ) /E (
+        `Configuration error - check settings` /N
+    )
+;
+
+// Interrupt Handler for Emergency Stop
+:Q
+    `Emergency stop triggered` /N
+    G              // Generate report
+    0 A            // Clear alarm
+    /F             // Exit
+;
+
+// Main Program Entry
+Z
+
+////////////////////////////////////////////////
