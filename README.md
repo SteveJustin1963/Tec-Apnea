@@ -32,24 +32,65 @@ Remember to calibrate the frequency range and amplitude thresholds based on your
 
 ### mint code
 
-1. Removed FFT: The code no longer attempts to perform FFT. Instead, it relies on the external band pass filter and detector circuit you mentioned.
-2. Snoring detection: The `R` function reads bit 0 of port 0x12 to detect if snoring is occurring (i.e., if the frequency is in the 60-300 Hz range).
-3. Sound level: The `L` function reads the full value from port 0x12 to get the sound level.
-4. Event detection: The `C` function checks for snoring and then determines the type of event based on the sound level.
-5. AHI calculation: The `I` function calculates the Apnea-Hypopnea Index as before.
-6. Main loop: The `M` function continuously monitors for events, updating counters and sleep time.
-7. Alarm: Uses port 0x13 to trigger the alarm when the event threshold is reached.
-8. Output: Prints event counts, total sleep time, and AHI when the alarm is triggered.
+Let me analyze this MINT code for a Sleep Apnea Monitor:
 
-To use this program on the TEC-1:
+1. Purpose:
+- Monitors breathing patterns during sleep
+- Detects and counts three types of sleep events:
+  * Apnea (severe breathing reduction)
+  * Hypopnea (partial breathing reduction)
+  * RERA (Respiratory Effort Related Arousal)
+- Calculates AHI (Apnea-Hypopnea Index)
+- Triggers an alarm if too many events occur
 
-1. Ensure the band pass filter and detector circuit is connected to port 0x12 (bit 0 for snoring detection, full port for sound level).
-2. Connect the alarm (buzzer) to port 0x13.
-3. Enter the MINT code into the TEC-1.
-4. Run the program by executing `Z`.
-5. The program will continuously monitor for sleep apnea events.
-6. When the number of events reaches the threshold, it will trigger the alarm and display the counts, total sleep time, and AHI.
+2. Key Constants:
+```mint
+50 a! // Apnea threshold
+30 y! // Hypopnea threshold
+60 r! // RERA threshold
+10 m! // Maximum events before alarm
+```
 
+3. Hardware Interface Functions:
+```mint
+:R #12 /I 1 & ;   // Reads snoring detector from port 0x12
+:L #12 /I ;       // Reads sound level from port 0x12
+:A #13 /O ;       // Controls alarm on port 0x13
+```
 
+4. Event Detection (:C function):
+- Monitors breathing sounds (60-300 Hz range)
+- Classifies events based on sound level thresholds:
+  * Below 50: Apnea
+  * Below 30: Hypopnea
+  * Above 60: RERA
+- Increments appropriate counters for each event
 
+5. AHI Calculation (:I function):
+- Calculates Apnea-Hypopnea Index
+- Formula: (apnea + hypopnea) * 3600 / total_sleep_time
+- Provides severity metric for sleep apnea
+
+6. Main Monitoring Loop (:M function):
+- Continuously checks for events
+- Tracks total sleep time
+- Triggers alarm if total events exceed threshold
+- Displays final statistics:
+  * Count of each event type
+  * Total sleep time
+  * AHI score
+
+7. Program Control:
+- Starts with :Z function
+- Runs until key press or alarm condition
+- Provides user feedback through terminal
+
+8. Features:
+- Real-time monitoring
+- Multiple event type detection
+- Automatic alarm triggering
+- Statistical reporting
+- Time-based analysis
+
+This code appears to be designed for the TEC-1 computer to function as a basic sleep apnea monitoring device, using sound level detection to identify breathing irregularities during sleep.
 
